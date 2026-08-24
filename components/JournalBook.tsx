@@ -123,44 +123,6 @@ export const JournalBook: React.FC<JournalBookProps> = ({
 
         {/* Notebook Leather Binder Outer Wrap */}
         <div className={showBinder ? 'binder-leather' : ''}>
-          {/* Hanging Pen / Bookmark ribbon simulation */}
-          {showBinder && (
-            <div
-              className="no-print"
-              style={{
-                position: 'absolute',
-                top: '-18px',
-                right: '48px',
-                width: '6px',
-                height: '42px',
-                backgroundColor: '#1a1a1a',
-                borderRadius: '2px',
-                boxShadow: '2px 4px 6px rgba(0,0,0,0.3)',
-                zIndex: 6,
-              }}
-            >
-              {/* Charm hanging at the top */}
-              <div style={{
-                position: 'absolute',
-                top: '-10px',
-                right: '-5px',
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                backgroundColor: '#d4af37',
-                border: '1.5px solid #78350f',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '9px',
-                color: '#78350f'
-              }}>
-                ✦
-              </div>
-            </div>
-          )}
-
           {/* Bullet Grid Notebook Paper Page */}
           <div className="bullet-paper journal-book" style={{ padding: '16px 14px 18px 18px', position: 'relative' }}>
             {/* Washi Tape Strip along left edge */}
