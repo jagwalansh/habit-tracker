@@ -130,14 +130,8 @@ export const MetricChart: React.FC<MetricChartProps> = ({
             style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }}
             onClick={handleSvgClick}
           >
-            {/* Background Dot Grid inside SVG */}
-            <defs>
-              <pattern id="chartDots" width="16" height="16" patternUnits="userSpaceOnUse">
-                <circle cx="2" cy="2" r="1" fill="var(--paper-dot)" />
-              </pattern>
-            </defs>
+            {/* Background Canvas */}
             <rect width={svgWidth} height={chartHeight} fill="var(--paper-card)" />
-            <rect width={svgWidth} height={chartHeight} fill="url(#chartDots)" />
 
             {/* Y-Axis Guidelines & Numbers (10 to 1) */}
             {yLevels.map((lvl) => {

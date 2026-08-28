@@ -79,12 +79,9 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Authentic Bullet Journal Dot Grid Background */
+/* Bullet Journal Paper Background (Clean paper without background dots) */
 .bullet-paper {
   background-color: var(--paper-bg);
-  background-image: radial-gradient(var(--paper-dot) 1.2px, transparent 1.2px);
-  background-size: 16px 16px;
-  background-position: 0 0;
   box-shadow: var(--paper-shadow);
   border-radius: 4px;
   position: relative;
@@ -315,9 +312,8 @@ html, body {
 }
 
 .habit-name-col {
-  width: 124px;
-  min-width: 124px;
-  max-width: 124px;
+  width: 130px;
+  min-width: 130px;
   text-align: left !important;
   padding-left: 6px !important;
   padding-right: 4px !important;
@@ -325,6 +321,10 @@ html, body {
   font-weight: 700;
   letter-spacing: 0.03em;
   background: rgba(255, 255, 255, 0.4);
+}
+
+.highlights-row td {
+  background-color: rgba(0, 0, 0, 0.015);
 }
 
 .day-header-dow {

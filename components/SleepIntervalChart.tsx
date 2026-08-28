@@ -116,14 +116,8 @@ export const SleepIntervalChart: React.FC<SleepIntervalChartProps> = ({
           style={{ width: '100%', height: 'auto', display: 'block', cursor: 'pointer' }}
           onClick={() => onOpenMetricModal(hoveredDay || 1)}
         >
-          {/* Background dot matrix */}
-          <defs>
-            <pattern id="alpineDots" width="16" height="16" patternUnits="userSpaceOnUse">
-              <circle cx="2" cy="2" r="1" fill="var(--paper-dot)" />
-            </pattern>
-          </defs>
+          {/* Background Canvas */}
           <rect width={svgWidth} height={chartHeight} fill="var(--paper-card)" />
-          <rect width={svgWidth} height={chartHeight} fill="url(#alpineDots)" />
 
           {/* ======= DAY NUMBERS ROW (kraft ribbon inside SVG) ======= */}
           <rect

@@ -10,18 +10,22 @@ interface HabitGridProps {
   days: DayInfo[];
   habits: Habit[];
   completions: Record<string, Record<number, boolean>>;
+  annotations?: Record<number, string>;
   soundEnabled: boolean;
   onToggleHabit: (habitId: string, dayNumber: number) => void;
   onDeleteHabit: (habitId: string) => void;
+  onToggleAnnotation?: (dayNumber: number) => void;
 }
 
 export const HabitGrid: React.FC<HabitGridProps> = ({
   days,
   habits,
   completions,
+  annotations,
   soundEnabled,
   onToggleHabit,
   onDeleteHabit,
+  onToggleAnnotation,
 }) => {
   const spineDayThreshold = Math.ceil(days.length / 2); // e.g. 13 or 15 for booklet split
 
@@ -137,8 +141,8 @@ export const HabitGrid: React.FC<HabitGridProps> = ({
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                       fontFamily: 'var(--font-primary)',
-                      fontSize: habit.name.length > 9 ? '11.5px' : habit.name.length > 7 ? '12.5px' : '13.5px',
-                      lineHeight: 1.1,
+                      fontSize: habit.name.length > 14 ? '11px' : habit.name.length > 9 ? '12px' : '13px',
+                      lineHeight: 1.15,
                       flex: 1,
                       minWidth: 0,
                       overflow: 'hidden',
@@ -204,6 +208,54 @@ export const HabitGrid: React.FC<HabitGridProps> = ({
               </tr>
             );
           })}
+
+          {/* HIGHLIGHTS Row - perfectly aligned within the same table */}
+          {annotations && onToggleAnnotation && (
+            <tr className="highlights-row" style={{ borderTop: '2px solid var(--ink-black)' }}>
+              <td
+                className="habit-name-col sticky-habit-col"
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--ink-muted)',
+                  fontFamily: 'var(--font-primary)',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                HIGHLIGHTS
+              </td>
+              {days.map((day) => {
+                const hasHeart = annotations[day.dayNumber] === 'heart';
+                const isSpineSplit = day.dayNumber === spineDayThreshold;
+                const isWeekEnd = day.dayOfWeekIndex === 6;
+                const dividerClass = isSpineSplit 
+                  ? 'spine-divider-right' 
+                  : (isWeekEnd ? 'week-divider-right' : '');
+
+                return (
+                  <td
+                    key={`annot-${day.dayNumber}`}
+                    className={`day-cell ${dividerClass} ${day.isToday ? 'is-today-column' : ''}`}
+                    onClick={() => onToggleAnnotation(day.dayNumber)}
+                    title={`Toggle highlight for day ${day.dayNumber}`}
+                    style={{
+                      height: '24px',
+                      cursor: 'pointer',
+                      backgroundColor: day.isToday 
+                        ? 'rgba(234, 179, 8, 0.12)' 
+                        : (day.isWeekend ? 'rgba(0, 0, 0, 0.02)' : 'transparent'),
+                    }}
+                  >
+                    {hasHeart && (
+                      <span className="heart-marker active" style={{ fontSize: '14px', lineHeight: 1 }}>
+                        ♡
+                      </span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

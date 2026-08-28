@@ -386,20 +386,15 @@ export default function HabitTrackerPage() {
             />
           ) : (
             <>
-              {/* Top Half: Monthly Habit Matrix */}
+              {/* Monthly Habit Matrix with perfectly aligned Highlights row */}
               <HabitGrid
                 days={days}
                 habits={monthData.habits}
                 completions={monthData.completions}
+                annotations={monthData.annotations}
                 soundEnabled={soundEnabled}
                 onToggleHabit={handleToggleHabit}
                 onDeleteHabit={handleDeleteHabit}
-              />
-
-              {/* Middle Ribbon: Highlight Hearts */}
-              <DayMarkerBar
-                days={days}
-                annotations={monthData.annotations}
                 onToggleAnnotation={handleToggleAnnotation}
               />
 
