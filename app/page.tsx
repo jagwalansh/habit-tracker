@@ -153,6 +153,24 @@ export default function HabitTrackerPage() {
     updateData(updatedData);
   };
 
+  // Rename habit
+  const handleRenameHabit = (habitId: string, newName: string) => {
+    if (!monthData) return;
+    const trimmedName = newName.trim().toUpperCase();
+    if (!trimmedName) return;
+
+    const updatedHabits = monthData.habits.map((h) =>
+      h.id === habitId ? { ...h, name: trimmedName } : h
+    );
+
+    const updatedData: MonthData = {
+      ...monthData,
+      habits: updatedHabits,
+    };
+
+    updateData(updatedData);
+  };
+
   // Toggle day annotation (heart marker)
   const handleToggleAnnotation = (dayNumber: number) => {
     if (!monthData) return;
@@ -350,6 +368,7 @@ export default function HabitTrackerPage() {
               soundEnabled={soundEnabled}
               onToggleHabit={handleToggleHabit}
               onDeleteHabit={handleDeleteHabit}
+              onRenameHabit={handleRenameHabit}
             />
           )}
         </AlpineSpiralBook>
@@ -395,6 +414,7 @@ export default function HabitTrackerPage() {
                 soundEnabled={soundEnabled}
                 onToggleHabit={handleToggleHabit}
                 onDeleteHabit={handleDeleteHabit}
+                onRenameHabit={handleRenameHabit}
                 onToggleAnnotation={handleToggleAnnotation}
               />
 
