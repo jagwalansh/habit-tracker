@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Architects_Daughter, Patrick_Hand, Caveat, Kalam, Alex_Brush, Great_Vibes } from "next/font/google";
 import "./globals.css";
 
@@ -59,6 +60,11 @@ export default function RootLayout({
       className={`${architectsDaughter.variable} ${patrickHand.variable} ${caveat.variable} ${kalam.variable} ${alexBrush.variable} ${greatVibes.variable}`}
     >
       <body>{children}</body>
+      <Script
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon='{"token": "2145a619bcce4d02a2e2f9fd40472b0c"}'
+        strategy="afterInteractive"
+      />
     </html>
   );
 }
