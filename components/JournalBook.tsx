@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MONTH_NAMES } from '../lib/utils';
-import { Sparkles, Moon, Sun, Layers } from 'lucide-react';
+import { Sparkles, Layers } from 'lucide-react';
 import { Notebook3DSpread } from './Notebook3DSpread';
 
 interface JournalBookProps {
@@ -25,21 +25,10 @@ export const JournalBook: React.FC<JournalBookProps> = ({
   children,
 }) => {
   const [showBinder, setShowBinder] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
 
   const prevMonthName = MONTH_NAMES[(month + 11) % 12].slice(0, 3);
   const currentMonthName = MONTH_NAMES[month].slice(0, 3);
   const nextMonthName = MONTH_NAMES[(month + 1) % 12].slice(0, 3);
-
-  const toggleDarkMode = () => {
-    const nextDark = !darkMode;
-    setDarkMode(nextDark);
-    if (nextDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  };
 
   return (
     <div className="journal-wrapper">
@@ -71,15 +60,6 @@ export const JournalBook: React.FC<JournalBookProps> = ({
           >
             <Layers size={14} />
             <span>{showBinder ? 'Minimal View' : 'Leather Binder View'}</span>
-          </button>
-
-          <button
-            onClick={toggleDarkMode}
-            className="hand-button"
-            title="Toggle Dark Paper Mode"
-            style={{ fontSize: '12px', padding: '4px 8px' }}
-          >
-            {darkMode ? <Sun size={14} /> : <Moon size={14} />}
           </button>
         </div>
       </div>
