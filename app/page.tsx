@@ -5,8 +5,6 @@ import { MonthData, DayMetric, Habit, JournalTheme } from '../lib/types';
 import { 
   loadJournalMonth, 
   saveJournalMonth, 
-  getPhotoReplicaData, 
-  getAlpinePhotoReplicaData,
   getInitialMonthData,
   loadSavedTheme,
   saveTheme,
@@ -231,21 +229,6 @@ export default function HabitTrackerPage() {
     updateData(updatedData);
   };
 
-  // Photo 1 Demo
-  const handleLoadClassicPreset = () => {
-    setYear(2020);
-    setMonth(10);
-    const replica = getPhotoReplicaData();
-    updateData(replica);
-  };
-
-  // Photo 2 Demo
-  const handleLoadAlpinePreset = () => {
-    setYear(2026);
-    setMonth(0);
-    const replica = getAlpinePhotoReplicaData();
-    updateData(replica);
-  };
 
   // Reset month
   const handleResetMonth = () => {
@@ -309,7 +292,7 @@ export default function HabitTrackerPage() {
               transition: 'all 0.15s ease',
             }}
           >
-            📖 Theme 1: Traveler&apos;s Leather (Photo 1)
+            📖 Theme 1: Traveler&apos;s Leather
           </button>
 
           <button
@@ -327,7 +310,7 @@ export default function HabitTrackerPage() {
               transition: 'all 0.15s ease',
             }}
           >
-            🏔️ Theme 2: Alpine Spiral Sketchbook (Photo 2)
+            🏔️ Theme 2: Alpine Spiral Sketchbook
           </button>
         </div>
       </div>
@@ -342,7 +325,6 @@ export default function HabitTrackerPage() {
           onMonthChange={handleMonthChange}
           onToggleSound={() => setSoundEnabled(!soundEnabled)}
           onOpenAddHabit={() => setIsAddHabitOpen(true)}
-          onLoadAlpinePreset={handleLoadAlpinePreset}
           onResetMonth={handleResetMonth}
           onToggleView={setActiveTab}
           onJumpToToday={handleJumpToToday}
@@ -392,7 +374,6 @@ export default function HabitTrackerPage() {
             onMonthChange={handleMonthChange}
             onToggleSound={() => setSoundEnabled(!soundEnabled)}
             onOpenAddHabit={() => setIsAddHabitOpen(true)}
-            onLoadPhotoPreset={handleLoadClassicPreset}
             onResetMonth={handleResetMonth}
             onToggleView={setActiveTab}
             onJumpToToday={handleJumpToToday}

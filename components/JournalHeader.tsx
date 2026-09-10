@@ -6,14 +6,13 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Plus, 
-  Sparkles, 
   Volume2, 
   VolumeX, 
   Printer, 
-  RotateCcw,
-  BarChart2,
-  BookOpen,
-  Calendar
+  RotateCcw, 
+  BarChart2, 
+  BookOpen, 
+  Calendar 
 } from 'lucide-react';
 
 interface JournalHeaderProps {
@@ -24,7 +23,6 @@ interface JournalHeaderProps {
   onMonthChange: (year: number, month: number) => void;
   onToggleSound: () => void;
   onOpenAddHabit: () => void;
-  onLoadPhotoPreset: () => void;
   onResetMonth: () => void;
   onToggleView: (view: 'TRACKER' | 'STATS' | 'SETTINGS') => void;
   onJumpToToday?: () => void;
@@ -38,7 +36,6 @@ export const JournalHeader: React.FC<JournalHeaderProps> = ({
   onMonthChange,
   onToggleSound,
   onOpenAddHabit,
-  onLoadPhotoPreset,
   onResetMonth,
   onToggleView,
   onJumpToToday,
@@ -174,16 +171,6 @@ export const JournalHeader: React.FC<JournalHeaderProps> = ({
         >
           <Plus size={15} />
           <span>Add Habit</span>
-        </button>
-
-        <button
-          onClick={onLoadPhotoPreset}
-          className="hand-button"
-          title="Load exact replica data from the reference photo"
-          style={{ background: '#fef08a' }}
-        >
-          <Sparkles size={15} color="#854d0e" />
-          <span style={{ color: '#854d0e' }}>Photo Demo</span>
         </button>
 
         <button

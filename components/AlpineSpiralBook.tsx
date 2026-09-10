@@ -4,8 +4,7 @@ import React from 'react';
 import { MONTH_NAMES } from '../lib/utils';
 import { MountainArtwork } from './MountainArtwork';
 import { KraftMiniCalendar } from './KraftMiniCalendar';
-import { Notebook3DSpread } from './Notebook3DSpread';
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Volume2, VolumeX, Printer, RotateCcw, BarChart2, BookOpen, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Volume2, VolumeX, Printer, RotateCcw, BarChart2, BookOpen, Calendar } from 'lucide-react';
 
 interface AlpineSpiralBookProps {
   year: number;
@@ -16,7 +15,6 @@ interface AlpineSpiralBookProps {
   onMonthChange: (year: number, month: number) => void;
   onToggleSound: () => void;
   onOpenAddHabit: () => void;
-  onLoadAlpinePreset: () => void;
   onResetMonth: () => void;
   onToggleView: (view: 'TRACKER' | 'STATS' | 'SETTINGS') => void;
   onJumpToToday?: () => void;
@@ -33,7 +31,6 @@ export const AlpineSpiralBook: React.FC<AlpineSpiralBookProps> = ({
   onMonthChange,
   onToggleSound,
   onOpenAddHabit,
-  onLoadAlpinePreset,
   onResetMonth,
   onToggleView,
   onJumpToToday,
@@ -103,16 +100,6 @@ export const AlpineSpiralBook: React.FC<AlpineSpiralBookProps> = ({
           >
             <Plus size={15} />
             <span>Add Habit</span>
-          </button>
-
-          <button
-            onClick={onLoadAlpinePreset}
-            className="hand-button"
-            title="Load exact replica data from the Alpine reference photo"
-            style={{ background: '#fef08a' }}
-          >
-            <Sparkles size={15} color="#854d0e" />
-            <span style={{ color: '#854d0e' }}>Alpine Photo Demo</span>
           </button>
 
           <button
