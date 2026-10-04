@@ -30,15 +30,46 @@ export function getInitialMonthData(year: number, month: number, theme: JournalT
   // Check if user has a saved habit list for this theme
   let initialHabits = theme === 'alpine' ? DEFAULT_ALPINE_HABITS : DEFAULT_HABITS;
   if (typeof window !== 'undefined') {
-    const savedHabitsRaw = localStorage.getItem(`bullet_journal_habits_${theme}`);
-    if (savedHabitsRaw) {
-      try {
-        const parsed = JSON.parse(savedHabitsRaw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          initialHabits = parsed;
+    let foundPrevMonth = false;
+    let checkDate = new Date(year, month, 1);
+    
+    // Search up to 12 months backwards to find the most recent previous month's habits
+    for (let i = 0; i < 12; i++) {
+      checkDate.setMonth(checkDate.getMonth() - 1);
+      const prevYear = checkDate.getFullYear();
+      const prevMonth = checkDate.getMonth();
+      const prevMonthKey = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}`;
+      const prevMonthRaw = localStorage.getItem(STORAGE_PREFIX + prevMonthKey);
+      
+      if (prevMonthRaw) {
+        try {
+          const prevData = JSON.parse(prevMonthRaw);
+          // Check if this month matches the current theme, or just take its habits if we don't care.
+          // Since habits can be customized, we'll take them as long as they exist.
+          if (prevData && Array.isArray(prevData.habits) && prevData.habits.length > 0) {
+            // Optional: check if theme matches by checking color property, but taking the latest is usually what user wants
+            initialHabits = prevData.habits;
+            foundPrevMonth = true;
+            break;
+          }
+        } catch (e) {
+          console.error('Failed to parse prev month data', e);
         }
-      } catch (e) {
-        console.error('Failed to parse saved habits', e);
+      }
+    }
+
+    // Fallback to saved template if no previous month was found
+    if (!foundPrevMonth) {
+      const savedHabitsRaw = localStorage.getItem(`bullet_journal_habits_${theme}`);
+      if (savedHabitsRaw) {
+        try {
+          const parsed = JSON.parse(savedHabitsRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            initialHabits = parsed;
+          }
+        } catch (e) {
+          console.error('Failed to parse saved habits', e);
+        }
       }
     }
   }
