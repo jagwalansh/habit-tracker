@@ -292,12 +292,18 @@ export const HabitGrid: React.FC<HabitGridProps> = ({
     onToggleHabit(habitId, dayNumber);
   };
 
+  const minTableWidth = 130 + days.length * 26;
+
   return (
-    <div className="table-scroll-container">
-      <table className="habit-matrix-table">
+    <div className="table-scroll-container" id="habit-grid-scroll-container">
+      <table className="habit-matrix-table" id="habit-matrix-table" style={{ minWidth: `${minTableWidth}px` }}>
         <thead>
           <tr>
-            <th className="habit-name-col sticky-habit-col" style={{ borderBottom: '1px solid var(--ink-black)' }} />
+            <th
+              id="habit-name-header"
+              className="habit-name-col sticky-habit-col"
+              style={{ borderBottom: '1px solid var(--ink-black)' }}
+            />
             {days.map((day) => {
               const isSpineSplit = day.dayNumber === spineDayThreshold;
               const isWeekEnd = day.dayOfWeekIndex === 6;
@@ -333,6 +339,7 @@ export const HabitGrid: React.FC<HabitGridProps> = ({
               return (
                 <th
                   key={`num-${day.dayNumber}`}
+                  data-day-col={day.dayNumber}
                   className={`day-header-num ${dividerClass} ${day.isToday ? 'is-today-column' : ''}`}
                   style={{
                     backgroundColor: day.isToday ? 'rgba(234, 179, 8, 0.25)' : (day.isWeekend ? 'rgba(0, 0, 0, 0.03)' : 'transparent'),

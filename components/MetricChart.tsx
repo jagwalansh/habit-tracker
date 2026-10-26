@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DayMetric } from '../lib/types';
 import { DayInfo } from '../lib/utils';
 import { Edit3 } from 'lucide-react';
@@ -24,23 +24,164 @@ export const MetricChart: React.FC<MetricChartProps> = ({
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
   const [hoveredY, setHoveredY] = useState<number | null>(null);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const numDays = days.length;
   const spineDayThreshold = Math.ceil(numDays / 2);
 
   // SVG coordinate dimensions
   const chartHeight = 220;
-  const paddingLeft = 32;
-  const paddingRight = 14;
   const paddingTop = 18;
   const paddingBottom = 22;
 
+  const minChartWidth = 130 + numDays * 26;
+  const [chartWidth, setChartWidth] = useState<number>(() => Math.max(minChartWidth, 936));
+  const [habitColWidth, setHabitColWidth] = useState<number>(130);
+  const [dayPositions, setDayPositions] = useState<Record<number, number>>({});
+  const [weekBounds, setWeekBounds] = useState<Record<number, number>>({});
+  const [spineX, setSpineX] = useState<number | null>(null);
+
   const yLevels = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
+  // Measure table DOM column positions to achieve pixel-perfect alignment
+  const updateAlignment = useCallback(() => {
+    if (!containerRef.current) return;
+    const chartRect = containerRef.current.getBoundingClientRect();
+    if (chartRect.width > 0) {
+      setChartWidth(chartRect.width);
+    }
+
+    const table = document.getElementById('habit-matrix-table');
+    if (!table) return;
+
+    const nameCol = table.querySelector('.habit-name-col');
+    if (nameCol) {
+      const nameRect = nameCol.getBoundingClientRect();
+      if (nameRect.width > 0) {
+        setHabitColWidth(nameRect.width);
+      }
+    }
+
+    const centers: Record<number, number> = {};
+    const wBounds: Record<number, number> = {};
+    let sX: number | null = null;
+
+    days.forEach((d) => {
+      const th = table.querySelector(`[data-day-col="${d.dayNumber}"]`);
+      if (th) {
+        const thRect = th.getBoundingClientRect();
+        // Distance from chart's left edge to column center
+        const center = thRect.left - chartRect.left + thRect.width / 2;
+        centers[d.dayNumber] = center;
+
+        if (d.dayOfWeekIndex === 6) {
+          wBounds[d.dayNumber] = thRect.right - chartRect.left;
+        }
+        if (d.dayNumber === spineDayThreshold) {
+          sX = thRect.right - chartRect.left;
+        }
+      }
+    });
+
+    if (Object.keys(centers).length > 0) {
+      setDayPositions(centers);
+    }
+    if (Object.keys(wBounds).length > 0) {
+      setWeekBounds(wBounds);
+    }
+    if (sX !== null) {
+      setSpineX(sX);
+    }
+  }, [days, spineDayThreshold]);
+
+  // Keep alignment synced on mount, resize, and DOM updates
+  useEffect(() => {
+    updateAlignment();
+    const timer1 = setTimeout(updateAlignment, 50);
+    const timer2 = setTimeout(updateAlignment, 200);
+
+    const handleResize = () => {
+      updateAlignment();
+    };
+    window.addEventListener('resize', handleResize);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      ro = new ResizeObserver(() => updateAlignment());
+      ro.observe(containerRef.current);
+      const table = document.getElementById('habit-matrix-table');
+      if (table) ro.observe(table);
+    }
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', handleResize);
+      ro?.disconnect();
+    };
+  }, [updateAlignment]);
+
+  // Synchronize horizontal scrolling between habit grid and metric chart
+  useEffect(() => {
+    const chartScroll = scrollContainerRef.current;
+    const gridScroll = document.getElementById('habit-grid-scroll-container');
+    if (!chartScroll || !gridScroll) return;
+
+    let isSyncingChart = false;
+    let isSyncingGrid = false;
+
+    const onGridScroll = () => {
+      if (isSyncingGrid) return;
+      isSyncingChart = true;
+      chartScroll.scrollLeft = gridScroll.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingChart = false;
+      });
+    };
+
+    const onChartScroll = () => {
+      if (isSyncingChart) return;
+      isSyncingGrid = true;
+      gridScroll.scrollLeft = chartScroll.scrollLeft;
+      requestAnimationFrame(() => {
+        isSyncingGrid = false;
+      });
+    };
+
+    gridScroll.addEventListener('scroll', onGridScroll, { passive: true });
+    chartScroll.addEventListener('scroll', onChartScroll, { passive: true });
+
+    return () => {
+      gridScroll.removeEventListener('scroll', onGridScroll);
+      chartScroll.removeEventListener('scroll', onChartScroll);
+    };
+  }, []);
+
   // Helper to calculate X and Y coordinates
-  const getX = (dayNumber: number, totalWidth: number) => {
-    const availableWidth = totalWidth - paddingLeft - paddingRight;
-    const colWidth = availableWidth / numDays;
-    return paddingLeft + (dayNumber - 0.5) * colWidth;
+  const getColWidth = () => {
+    const avail = chartWidth - habitColWidth;
+    return avail / numDays;
+  };
+
+  const getDayX = (dayNumber: number) => {
+    if (dayPositions[dayNumber] != null) {
+      return dayPositions[dayNumber];
+    }
+    const colWidth = getColWidth();
+    return habitColWidth + (dayNumber - 0.5) * colWidth;
+  };
+
+  const getSpineDividerX = () => {
+    if (spineX != null) return spineX;
+    const colWidth = getColWidth();
+    return habitColWidth + spineDayThreshold * colWidth;
+  };
+
+  const getWeekDividerX = (dayNumber: number) => {
+    if (weekBounds[dayNumber] != null) return weekBounds[dayNumber];
+    const colWidth = getColWidth();
+    return habitColWidth + dayNumber * colWidth;
   };
 
   const getY = (value: number) => {
@@ -51,14 +192,14 @@ export const MetricChart: React.FC<MetricChartProps> = ({
   };
 
   // Build SVG path string for a metric
-  const buildPath = (metricKey: 'mood' | 'stress' | 'sleep', totalWidth: number) => {
+  const buildPath = (metricKey: 'mood' | 'stress' | 'sleep') => {
     const points: { x: number; y: number; day: number; val: number }[] = [];
 
     days.forEach((d) => {
       const val = metrics[d.dayNumber]?.[metricKey];
       if (val != null && val >= 1 && val <= 10) {
         points.push({
-          x: getX(d.dayNumber, totalWidth),
+          x: getDayX(d.dayNumber),
           y: getY(val),
           day: d.dayNumber,
           val,
@@ -76,24 +217,32 @@ export const MetricChart: React.FC<MetricChartProps> = ({
     return { path: pathStr, points };
   };
 
-  // Reference SVG viewBox width
-  const svgWidth = Math.max(760, numDays * 28 + paddingLeft + paddingRight);
-
-  const moodData = buildPath('mood', svgWidth);
-  const stressData = buildPath('stress', svgWidth);
-  const sleepData = buildPath('sleep', svgWidth);
+  const moodData = buildPath('mood');
+  const stressData = buildPath('stress');
+  const sleepData = buildPath('sleep');
 
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = ((e.clientX - rect.left) / rect.width) * svgWidth;
-    const clickY = ((e.clientY - rect.top) / rect.height) * chartHeight;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    // Check if clicked in left margin (Y-axis label area)
+    if (clickX < habitColWidth - 10) {
+      onOpenMetricModal(hoveredDay || 1);
+      return;
+    }
 
     // Find closest day
-    const availableWidth = svgWidth - paddingLeft - paddingRight;
-    const colWidth = availableWidth / numDays;
-    const relativeX = clickX - paddingLeft;
-    const dayIndex = Math.floor(relativeX / colWidth);
-    const dayNumber = Math.max(1, Math.min(numDays, dayIndex + 1));
+    let closestDay = 1;
+    let minDistance = Infinity;
+    days.forEach((d) => {
+      const dX = getDayX(d.dayNumber);
+      const dist = Math.abs(clickX - dX);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestDay = d.dayNumber;
+      }
+    });
 
     // Calculate score 1-10 from clickY
     const availableHeight = chartHeight - paddingTop - paddingBottom;
@@ -102,53 +251,75 @@ export const MetricChart: React.FC<MetricChartProps> = ({
     const roundedVal = Math.max(1, Math.min(10, Math.round(rawVal * 2) / 2)); // 0.5 step
 
     if (activePen === 'mood') {
-      onUpdateDayMetric(dayNumber, 'mood', roundedVal);
+      onUpdateDayMetric(closestDay, 'mood', roundedVal);
     } else if (activePen === 'stress') {
-      onUpdateDayMetric(dayNumber, 'stress', roundedVal);
+      onUpdateDayMetric(closestDay, 'stress', roundedVal);
     } else if (activePen === 'sleep') {
-      onUpdateDayMetric(dayNumber, 'sleep', roundedVal);
+      onUpdateDayMetric(closestDay, 'sleep', roundedVal);
     } else {
       // If 'all' is active, open modal for full day score adjustment
-      onOpenMetricModal(dayNumber);
+      onOpenMetricModal(closestDay);
     }
   };
 
   return (
     <div style={{ position: 'relative', marginTop: '4px' }}>
       {/* Scrollable Container */}
-      <div className="table-scroll-container">
-        <div style={{
-          minWidth: `${svgWidth}px`,
-          position: 'relative',
-          backgroundColor: 'var(--paper-card)',
-          border: '1.5px solid var(--ink-black)',
-          borderRadius: '3px',
-        }}>
+      <div className="table-scroll-container" ref={scrollContainerRef} id="metric-chart-scroll-container">
+        <div
+          ref={containerRef}
+          style={{
+            minWidth: `${minChartWidth}px`,
+            position: 'relative',
+            backgroundColor: 'var(--paper-card)',
+            border: '1.5px solid var(--ink-black)',
+            borderRadius: '3px',
+          }}
+        >
           {/* SVG Canvas for Multi-line Chart */}
           <svg
-            viewBox={`0 0 ${svgWidth} ${chartHeight}`}
-            style={{ width: '100%', height: 'auto', display: 'block', cursor: 'crosshair' }}
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            style={{ width: `${chartWidth}px`, height: `${chartHeight}px`, display: 'block', cursor: 'crosshair' }}
             onClick={handleSvgClick}
           >
             {/* Background Canvas */}
-            <rect width={svgWidth} height={chartHeight} fill="var(--paper-card)" />
+            <rect width={chartWidth} height={chartHeight} fill="var(--paper-card)" />
+
+            {/* Today's Column Highlight - perfectly aligned with Today column in calendar above */}
+            {days.map((d) => {
+              if (!d.isToday) return null;
+              const cW = getColWidth();
+              const x = getDayX(d.dayNumber) - cW / 2;
+              return (
+                <rect
+                  key="today-highlight-metric"
+                  x={x}
+                  y={paddingTop - 6}
+                  width={cW}
+                  height={chartHeight - paddingTop - paddingBottom + 12}
+                  fill="rgba(234, 179, 8, 0.12)"
+                />
+              );
+            })}
 
             {/* Y-Axis Guidelines & Numbers (10 to 1) */}
             {yLevels.map((lvl) => {
               const y = getY(lvl);
               return (
                 <g key={`y-${lvl}`}>
+                  {/* Dashed line extending across day columns */}
                   <line
-                    x1={paddingLeft}
+                    x1={habitColWidth}
                     y1={y}
-                    x2={svgWidth - paddingRight}
+                    x2={chartWidth - 2}
                     y2={y}
                     stroke="var(--paper-dot)"
                     strokeWidth="0.8"
                     strokeDasharray="2,3"
                   />
+                  {/* Number label right-aligned to baseline */}
                   <text
-                    x={paddingLeft - 8}
+                    x={habitColWidth - 8}
                     y={y + 4}
                     textAnchor="end"
                     fill="var(--ink-black)"
@@ -160,9 +331,9 @@ export const MetricChart: React.FC<MetricChartProps> = ({
                   </text>
                   {/* Tick mark */}
                   <line
-                    x1={paddingLeft - 4}
+                    x1={habitColWidth - 4}
                     y1={y}
-                    x2={paddingLeft}
+                    x2={habitColWidth}
                     y2={y}
                     stroke="var(--ink-black)"
                     strokeWidth="1.5"
@@ -171,63 +342,97 @@ export const MetricChart: React.FC<MetricChartProps> = ({
               );
             })}
 
-            {/* Y-Axis Baseline */}
+            {/* Y-Axis Baseline - exactly aligned with habit column separator */}
             <line
-              x1={paddingLeft}
+              x1={habitColWidth}
               y1={paddingTop - 6}
-              x2={paddingLeft}
+              x2={habitColWidth}
               y2={chartHeight - paddingBottom + 6}
               stroke="var(--ink-black)"
               strokeWidth="2"
             />
 
+            {/* Left Margin Habit Column Decor (authentic bullet journal style) */}
+            <g opacity="0.6">
+              <text
+                x={Math.max(14, (habitColWidth - 76) / 2)}
+                y={paddingTop + 14}
+                fill="var(--ink-muted)"
+                fontFamily="var(--font-primary)"
+                fontSize="11px"
+                fontWeight="700"
+                letterSpacing="0.08em"
+              >
+                DAILY
+              </text>
+              <text
+                x={Math.max(14, (habitColWidth - 76) / 2)}
+                y={paddingTop + 28}
+                fill="var(--ink-muted)"
+                fontFamily="var(--font-primary)"
+                fontSize="11px"
+                fontWeight="700"
+                letterSpacing="0.08em"
+              >
+                SCORES
+              </text>
+              <text
+                x={Math.max(14, (habitColWidth - 76) / 2)}
+                y={chartHeight - paddingBottom - 4}
+                fill="var(--ink-muted)"
+                fontFamily="var(--font-primary)"
+                fontSize="10px"
+                fontWeight="600"
+                letterSpacing="0.04em"
+              >
+                1 – 10
+              </text>
+            </g>
+
             {/* Vertical Week Dividers & Spine Crease */}
-            {days.map((d) => {
-              const x = getX(d.dayNumber, svgWidth);
-              const isSpine = d.dayNumber === spineDayThreshold;
-              const isWeekEnd = d.dayOfWeekIndex === 6;
-
-              if (isSpine) {
-                return (
-                  <g key={`spine-${d.dayNumber}`}>
-                    <line
-                      x1={x + 10}
-                      y1={paddingTop}
-                      x2={x + 10}
-                      y2={chartHeight - paddingBottom}
-                      stroke="var(--ink-black)"
-                      strokeWidth="1"
-                      opacity="0.3"
-                    />
-                    <line
-                      x1={x + 13}
-                      y1={paddingTop}
-                      x2={x + 13}
-                      y2={chartHeight - paddingBottom}
-                      stroke="var(--ink-black)"
-                      strokeWidth="1"
-                      opacity="0.3"
-                    />
-                  </g>
-                );
-              }
-
-              if (isWeekEnd) {
-                return (
+            {/* Spine Crease */}
+            {(() => {
+              const sX = getSpineDividerX();
+              return (
+                <g key="spine-crease-lines">
                   <line
-                    key={`week-${d.dayNumber}`}
-                    x1={x + 12}
-                    y1={paddingTop}
-                    x2={x + 12}
-                    y2={chartHeight - paddingBottom}
-                    stroke="var(--paper-dot)"
-                    strokeWidth="1.2"
-                    strokeDasharray="4,4"
+                    x1={sX - 1.5}
+                    y1={paddingTop - 6}
+                    x2={sX - 1.5}
+                    y2={chartHeight - paddingBottom + 6}
+                    stroke="var(--ink-black)"
+                    strokeWidth="1"
+                    opacity="0.3"
                   />
-                );
-              }
+                  <line
+                    x1={sX + 1.5}
+                    y1={paddingTop - 6}
+                    x2={sX + 1.5}
+                    y2={chartHeight - paddingBottom + 6}
+                    stroke="var(--ink-black)"
+                    strokeWidth="1"
+                    opacity="0.3"
+                  />
+                </g>
+              );
+            })()}
 
-              return null;
+            {/* Week Dividers */}
+            {days.map((d) => {
+              if (d.dayOfWeekIndex !== 6 || d.dayNumber === numDays) return null;
+              const wX = getWeekDividerX(d.dayNumber);
+              return (
+                <line
+                  key={`week-${d.dayNumber}`}
+                  x1={wX}
+                  y1={paddingTop - 6}
+                  x2={wX}
+                  y2={chartHeight - paddingBottom + 6}
+                  stroke="var(--paper-dot)"
+                  strokeWidth="1.2"
+                  strokeDasharray="4,4"
+                />
+              );
             })}
 
             {/* Chart Lines with Ink Gel Pen Stroke Styling */}
@@ -346,10 +551,10 @@ export const MetricChart: React.FC<MetricChartProps> = ({
             {/* Hovered Day Indicator Column (Vertical) */}
             {hoveredDay && (
               <line
-                x1={getX(hoveredDay, svgWidth)}
-                y1={paddingTop}
-                x2={getX(hoveredDay, svgWidth)}
-                y2={chartHeight - paddingBottom}
+                x1={getDayX(hoveredDay)}
+                y1={paddingTop - 6}
+                x2={getDayX(hoveredDay)}
+                y2={chartHeight - paddingBottom + 6}
                 stroke="var(--ink-black)"
                 strokeWidth="1.2"
                 strokeDasharray="2,2"
@@ -360,9 +565,9 @@ export const MetricChart: React.FC<MetricChartProps> = ({
             {/* Hovered Indicator Row (Horizontal) */}
             {hoveredY !== null && (
               <line
-                x1={paddingLeft}
+                x1={habitColWidth}
                 y1={hoveredY}
-                x2={svgWidth - paddingRight}
+                x2={chartWidth - 2}
                 y2={hoveredY}
                 stroke="var(--ink-black)"
                 strokeWidth="1.2"
