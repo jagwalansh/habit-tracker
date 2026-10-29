@@ -18,6 +18,24 @@ export interface DayMetric {
   notes?: string;
 }
 
+export type ExpenseCategory =
+  | 'food'
+  | 'transport'
+  | 'shopping'
+  | 'bills'
+  | 'entertainment'
+  | 'health'
+  | 'other';
+
+export interface Expense {
+  id: string;
+  dayNumber: number;      // 1-31
+  amount: number;
+  category: ExpenseCategory;
+  note?: string;
+  createdAt: string;      // ISO timestamp
+}
+
 export interface MonthData {
   monthKey: string; // "YYYY-MM"
   year: number;
@@ -26,6 +44,7 @@ export interface MonthData {
   completions: Record<string, Record<number, boolean>>;
   metrics: Record<number, DayMetric>;
   annotations: Record<number, string>;
+  expenses: Expense[];
 }
 
 export type ViewTab = 'TRACKER' | 'STATS' | 'SETTINGS' | 'PRESETS';

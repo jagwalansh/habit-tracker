@@ -1,4 +1,4 @@
-import { MonthData, Habit, DayMetric, JournalTheme } from './types';
+import { MonthData, Habit, DayMetric, Expense, JournalTheme } from './types';
 
 export const DEFAULT_HABITS: Habit[] = [
   { id: 'h-write', name: 'WRITE' },
@@ -82,6 +82,7 @@ export function getInitialMonthData(year: number, month: number, theme: JournalT
     completions: {},
     metrics: {},
     annotations: {},
+    expenses: [],
   };
 }
 
@@ -112,6 +113,10 @@ export function loadJournalMonth(year: number, month: number, theme: JournalThem
   }
   try {
     const data = JSON.parse(raw);
+    // Backward compatibility: ensure expenses array exists
+    if (!Array.isArray(data.expenses)) {
+      data.expenses = [];
+    }
     return data;
   } catch (e) {
     console.error('Failed to parse journal data', e);

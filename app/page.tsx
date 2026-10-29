@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { MonthData, DayMetric, Habit, JournalTheme } from '../lib/types';
+import { MonthData, DayMetric, Habit, JournalTheme, Expense, ExpenseCategory } from '../lib/types';
 import { 
   loadJournalMonth, 
   saveJournalMonth, 
@@ -22,6 +22,8 @@ import { CrosshatchHabitGrid } from '../components/CrosshatchHabitGrid';
 import { AddHabitModal } from '../components/AddHabitModal';
 import { MetricInputModal } from '../components/MetricInputModal';
 import { InsightsDrawer } from '../components/InsightsDrawer';
+import { ExpenseLog } from '../components/ExpenseLog';
+import { AddExpenseModal } from '../components/AddExpenseModal';
 
 export default function HabitTrackerPage() {
   const [theme, setTheme] = useState<JournalTheme>('classic');
@@ -34,6 +36,10 @@ export default function HabitTrackerPage() {
   // Modals state
   const [isAddHabitOpen, setIsAddHabitOpen] = useState<boolean>(false);
   const [metricModalDay, setMetricModalDay] = useState<number | null>(null);
+
+  // Expense modal state
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState<boolean>(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   // Month navigation handlers (page flip animation commented out for later)
   /*
@@ -239,8 +245,53 @@ export default function HabitTrackerPage() {
       completions: {},
       metrics: {},
       annotations: {},
+      expenses: monthData.expenses, // preserve expenses on reset
     };
     updateData(clean);
+  };
+
+  // ---- Expense handlers ----
+  const handleAddExpense = (dayNumber: number, amount: number, category: ExpenseCategory, note: string) => {
+    if (!monthData) return;
+    const newExpense: Expense = {
+      id: `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      dayNumber,
+      amount,
+      category,
+      note: note || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (editingExpense) {
+      // Update existing
+      const updatedExpenses = monthData.expenses.map((e) =>
+        e.id === editingExpense.id
+          ? { ...e, dayNumber, amount, category, note: note || undefined }
+          : e
+      );
+      updateData({ ...monthData, expenses: updatedExpenses });
+    } else {
+      // Add new
+      updateData({ ...monthData, expenses: [...monthData.expenses, newExpense] });
+    }
+
+    setEditingExpense(null);
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    if (!monthData) return;
+    const updatedExpenses = monthData.expenses.filter((e) => e.id !== expenseId);
+    updateData({ ...monthData, expenses: updatedExpenses });
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsExpenseModalOpen(true);
+  };
+
+  const handleOpenAddExpense = () => {
+    setEditingExpense(null);
+    setIsExpenseModalOpen(true);
   };
 
   if (!monthData) {
@@ -343,15 +394,29 @@ export default function HabitTrackerPage() {
               onClose={() => setActiveTab('TRACKER')}
             />
           ) : (
-            <CrosshatchHabitGrid
-              days={days}
-              habits={monthData.habits}
-              completions={monthData.completions}
-              soundEnabled={soundEnabled}
-              onToggleHabit={handleToggleHabit}
-              onDeleteHabit={handleDeleteHabit}
-              onRenameHabit={handleRenameHabit}
-            />
+            <>
+              <CrosshatchHabitGrid
+                days={days}
+                habits={monthData.habits}
+                completions={monthData.completions}
+                soundEnabled={soundEnabled}
+                onToggleHabit={handleToggleHabit}
+                onDeleteHabit={handleDeleteHabit}
+                onRenameHabit={handleRenameHabit}
+              />
+
+              {/* Daily Expense Log (Alpine) */}
+              <ExpenseLog
+                days={days}
+                expenses={monthData.expenses}
+                year={year}
+                month={month}
+                theme={theme}
+                onAddExpense={handleOpenAddExpense}
+                onEditExpense={handleEditExpense}
+                onDeleteExpense={handleDeleteExpense}
+              />
+            </>
           )}
         </AlpineSpiralBook>
       ) : (
@@ -407,6 +472,18 @@ export default function HabitTrackerPage() {
                 onUpdateDayMetric={handleUpdateDayMetric}
                 onOpenMetricModal={(d) => setMetricModalDay(d)}
               />
+
+              {/* Daily Expense Log */}
+              <ExpenseLog
+                days={days}
+                expenses={monthData.expenses}
+                year={year}
+                month={month}
+                theme={theme}
+                onAddExpense={handleOpenAddExpense}
+                onEditExpense={handleEditExpense}
+                onDeleteExpense={handleDeleteExpense}
+              />
             </>
           )}
         </JournalBook>
@@ -429,6 +506,19 @@ export default function HabitTrackerPage() {
         onClose={() => setMetricModalDay(null)}
         onSave={handleSaveDayMetric}
         onNavigateDay={(newDay) => setMetricModalDay(newDay)}
+      />
+
+      <AddExpenseModal
+        isOpen={isExpenseModalOpen}
+        maxDays={days.length}
+        defaultDay={new Date().getDate()}
+        editingExpense={editingExpense}
+        onClose={() => {
+          setIsExpenseModalOpen(false);
+          setEditingExpense(null);
+        }}
+        onSave={handleAddExpense}
+        onDelete={handleDeleteExpense}
       />
     </main>
   );
